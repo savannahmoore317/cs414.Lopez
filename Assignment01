@@ -1,1 +1,39 @@
+type nat = 
+  | Z
+  | S of nat
 
+let rec to_int = function
+  | Z -> 0
+  | S n -> 1 + to_int n
+
+let rec add x y =
+  match x with
+  | Z -> y
+  | S x' -> S (add x' y)
+
+let rec mul x y =
+  match x with
+  | Z -> Z
+  | S x' -> add y (mul x' y)
+
+let rec sub x y =
+  match x, y with
+  | Z, _ -> Z
+  | x, Z -> x
+  | S x', S y' -> sub x' y'
+
+let rec div x y =
+  match x, y with
+  | _, Z -> failwith "division by zero"
+  | Z, _ -> Z
+  | _, _ ->
+    let r = sub x y in
+    match r with
+    | Z -> S Z
+    | _ ->
+      if to_int x < to_int y then Z
+      else S (div r y)
+
+AI used
+GeekforGeeks used
+Youtube used
