@@ -37,3 +37,83 @@ let rec div x y =
 AI used
 GeekforGeeks used
 Youtube used
+
+
+type 'a btree =
+  | empty
+  | node of 'a * 'a btree * 'a btree
+
+let rec prune = function
+  | empty -> empty
+  | node (_, empty, empty) -> empty
+  | node (v, l, r) -> node (v, prune l, prune r)
+
+let level_traversal t =
+  let rec aux queue =
+    match queue with
+    | [] -> []
+    | empty :: rest -> aux rest
+    | node (v, l, r) :: rest -> v :: aux (rest @ [l; r])
+  in aux [t]
+
+let rec from_list = function
+  | [] -> empty
+  | xs ->
+    let n = List.length xs / 2 in
+    let left = from_list (List.take n xs) in
+    let v = List.nth xs n in
+    let right = from_list (List.drop (n+1) xs) in
+    node (v, left, right)
+
+
+AI used
+GeekforGeeks used
+Youtube used
+
+type 'a gtree =
+  | empty
+  | node of 'a list * 'a gtree list
+
+let rec height = function
+  | empty -> 0
+  | node (_, children) ->
+    1 + List.fold_left (fun acc c -> max acc (height c)) 0 children
+
+let rec inorder f = function
+  | empty -> []
+  | node (keys, children) ->
+    let rec aux ks cs =
+      match ks, cs with
+      | [], [c] -> inorder f c
+      | k :: ks', c :: cs' ->
+        inorder f c @ [f k] @ aux ks' cs'
+      | _ -> []
+    in aux keys children
+
+let rec preorder f = function
+  | empty -> []
+  | node (keys, children) ->
+    List.map f keys @ List.concat (List.map (preorder f) children)
+
+let rec postorder f = function
+  | empty -> []
+  | node (keys, children) ->
+    List.concat (List.map (postorder f) children) @ List.map f keys
+
+let rec insert x = function
+  | empty -> node ([x], [empty; empty])
+  | node (keys, children) as n ->
+    let rec aux ks cs =
+      match ks, cs with
+      | [], [c] -> [insert x c]
+      | k :: ks', c :: cs' ->
+        if x < k then insert x c :: cs'
+        else c :: aux ks' cs'
+      | _ -> cs
+    in
+    if List.exists ((=) x) keys then n
+    else node (List.sort_uniq compare (x :: keys), children)
+AI used
+GeekforGeeks used
+Youtube used
+Github.io
