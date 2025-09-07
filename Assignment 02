@@ -1,0 +1,412 @@
+Ai used
+Youtube used
+Lecture used
+1. let t =
+  Node (1, [
+    Node (2, []);
+    Node (3, [
+      Node (4, []);
+      Node (5, [])
+    ])
+  ])
+
+let () =
+  Printf.printf "size = %d\n" (size t);
+  let t2 = map string_of_int t in
+  let sum = fold (fun x xs -> x + List.fold_left (+) 0 xs) t in
+  Printf.printf "sum = %d\n" sum
+
+OUTPUT:
+size = 5
+sum = 15
+
+2.#include <iostream>
+#include <regex>
+#include <string>
+using namespace std;
+
+void testRegex(const string& pattern, const string tests[], int n) {
+    regex r(pattern);
+    for (int i = 0; i < n; i++) {
+        cout << tests[i] << " -> " << boolalpha << regex_match(tests[i], r) << endl;
+    }
+    cout << endl;
+}
+
+int main() {
+    cout << "C++ Identifiers:" << endl;
+    string idTests[] = {"var1", "_temp", "9abc"};
+    testRegex("^[A-Za-z_][A-Za-z0-9_]*$", idTests, 3);
+
+    cout << "US Phone Numbers:" << endl;
+    string phoneTests[] = {"(123) 456-7890", "123-456-7890", "1234567890"};
+    testRegex("^(\\(\\d{3}\\)\\s|\\d{3}-)\\d{3}-\\d{4}$", phoneTests, 3);
+
+    cout << "Floating Point Numbers:" << endl;
+    string floatTests[] = {"+3.14", "-0.5", "42"};
+    testRegex("^[+-]?(\\d+(\\.\\d*)?|\\.\\d+)$", floatTests, 3);
+
+    cout << "Binary Palindromes (len 3 or 4):" << endl;
+    string binTests[] = {"101", "0110", "110"};
+    testRegex("^(000|010|101|111|0000|0110|1001|1111)$", binTests, 3);
+
+    return 0;
+}
+
+OUTPUT:
+C++ Identifiers:
+var1 -> true
+_temp -> true
+9abc -> false
+
+US Phone Numbers:
+(123) 456-7890 -> true
+123-456-7890 -> true
+1234567890 -> false
+
+Floating Point Numbers:
++3.14 -> true
+-0.5 -> true
+42 -> true
+
+Binary Palindromes (len 3 or 4):
+101 -> true
+0110 -> true
+110 -> false
+
+3.import re
+
+TOKEN_SPEC = [
+    ("NUMBER", r"\d+"),
+    ("IDENT", r"[A-Za-z_][A-Za-z0-9_]*"),
+    ("PLUS", r"\+"),
+    ("MINUS", r"-"),
+    ("STAR", r"\*"),
+    ("SLASH", r"/"),
+    ("LPAREN", r"\("),
+    ("RPAREN", r"\)"),
+    ("WS", r"\s+"),
+]
+
+MASTER_RE = re.compile("|".join(f"(?P<{name}>{pat})" for name, pat in TOKEN_SPEC))
+
+class Token:
+    def __init__(self, kind, value):
+        self.kind = kind
+        self.value = value
+    def __repr__(self):
+        return f"Token({self.kind},{self.value})"
+
+def lex(s):
+    pos = 0
+    out = []
+    while pos < len(s):
+        m = MASTER_RE.match(s, pos)
+        if not m:
+            raise SyntaxError(f"Unexpected char at {pos}: {s[pos]!r}")
+        kind = m.lastgroup
+        text = m.group()
+        pos = m.end()
+        if kind == "WS":
+            continue
+        out.append(Token(kind, text))
+    return out
+
+
+class Node:
+    def __init__(self, label, children=None):
+        self.label = label
+        self.children = children or []
+
+class Parser:
+    def __init__(self, tokens):
+        self.toks = tokens
+        self.i = 0
+
+    def peek(self):
+        return self.toks[self.i] if self.i < len(self.toks) else None
+
+    def accept(self, kind):
+        if self.peek() and self.peek().kind == kind:
+            t = self.peek()
+            self.i += 1
+            return t
+        return None
+
+    def expect(self, kind):
+        t = self.accept(kind)
+        if not t:
+            raise SyntaxError(f"Expected {kind}, got {self.peek()}")
+        return t
+
+    def parse_expr(self):
+        left = self.parse_term()
+        node = Node("Expr", [left])
+        while True:
+            if self.accept("PLUS"):
+                right = self.parse_term()
+                node = Node("Expr", [node, Node("+"), right])
+            elif self.accept("MINUS"):
+                right = self.parse_term()
+                node = Node("Expr", [node, Node("-"), right])
+            else:
+                break
+        return node
+
+
+    def parse_term(self):
+        left = self.parse_factor()
+        node = Node("Term", [left])
+        while True:
+            if self.accept("STAR"):
+                right = self.parse_factor()
+                node = Node("Term", [node, Node("*"), right])
+            elif self.accept("SLASH"):
+                right = self.parse_factor()
+                node = Node("Term", [node, Node("/"), right])
+            else:
+                break
+        return node
+
+    def parse_factor(self):
+        if self.accept("LPAREN"):
+            expr = self.parse_expr()
+            self.expect("RPAREN")
+            return Node("Factor", [Node("("), expr, Node(")")])
+        t = self.accept("NUMBER")
+        if t:
+            return Node("Factor", [Node(t.value)])
+        t = self.accept("IDENT")
+        if t:
+            return Node("Factor", [Node(t.value)])
+        raise SyntaxError(f"Expected Factor, got {self.peek()}")
+
+
+def print_tree(node, indent=""):
+    print(indent + node.label)
+    for child in node.children:
+        print_tree(child, indent + "    ")
+
+
+expressions = ["(a+(b*C)/2)", "a*(3+b)*4", "42*c+3*(a+b)"]
+
+for expr in expressions:
+    print(f"Expression: {expr}")
+    tokens = lex(expr)
+    parser = Parser(tokens)
+    tree = parser.parse_expr()
+    print_tree(tree)
+    print("\n" + "-"*40 + "\n")
+
+OUTPUTS:Expr
+    Term
+        Factor
+            (
+            Expr
+                Expr
+                    Term
+                        Factor
+                            a
+                +
+                Term
+                    Term
+                        Factor
+                            (
+                            Expr
+                                Term
+                                    Term
+                                        Factor
+                                            b
+                                    *
+                                    Factor
+                                        C
+                            )
+                    /
+                    Factor
+                        2
+            )
+Expr
+    Term
+        Term
+            Term
+                Factor
+                    a
+            *
+            Factor
+                (
+                Expr
+                    Expr
+                        Term
+                            Factor
+                                3
+                    +
+                    Term
+                        Factor
+                            b
+                )
+        *
+        Factor
+            4
+Expr
+    Expr
+        Term
+            Term
+                Factor
+                    42
+            *
+            Factor
+                c
+    +
+    Term
+        Term
+            Factor
+                3
+        *
+        Factor
+            (
+            Expr
+                Expr
+                    Term
+                        Factor
+                            a
+                +
+                Term
+                    Factor
+                        b
+            )
+4. import re
+
+TOKEN_SPEC = [
+    ("NUMBER", r"\d+"),
+    ("IDENT", r"[A-Za-z_][A-Za-z0-9_]*"),
+    ("PLUS", r"\+"),
+    ("MINUS", r"-"),
+    ("STAR", r"\*"),
+    ("SLASH", r"/"),
+    ("LPAREN", r"\("),
+    ("RPAREN", r"\)"),
+    ("WS", r"\s+"),
+]
+
+MASTER_RE = re.compile("|".join(f"(?P<{name}>{pat})" for name, pat in TOKEN_SPEC))
+
+class Token:
+    def __init__(self, kind, value):
+        self.kind = kind
+        self.value = value
+    def __repr__(self):
+        return f"Token({self.kind},{self.value})"
+
+def lex(s):
+    pos = 0
+    out = []
+    while pos < len(s):
+        m = MASTER_RE.match(s, pos)
+        if not m:
+            raise SyntaxError(f"Unexpected char at {pos}: {s[pos]!r}")
+        kind = m.lastgroup
+        text = m.group()
+        pos = m.end()
+        if kind != "WS":
+            out.append(Token(kind, text))
+    return out
+
+class Node:
+    def __init__(self, label, children=None):
+        self.label = label
+        self.children = children or []
+
+class Parser:
+    def __init__(self, tokens):
+        self.toks = tokens
+        self.i = 0
+    def peek(self):
+        return self.toks[self.i] if self.i < len(self.toks) else None
+    def accept(self, kind):
+        if self.peek() and self.peek().kind == kind:
+            t = self.peek()
+            self.i += 1
+            return t
+        return None
+    def expect(self, kind):
+        t = self.accept(kind)
+        if not t:
+            raise SyntaxError(f"Expected {kind}, got {self.peek()}")
+        return t
+    def parse_expr(self):
+        left = self.parse_term()
+        node = Node("Expr", [left])
+        while True:
+            if self.accept("PLUS"):
+                right = self.parse_term()
+                node = Node("Expr", [node, Node("+"), right])
+            elif self.accept("MINUS"):
+                right = self.parse_term()
+                node = Node("Expr", [node, Node("-"), right])
+            else:
+                break
+        return node
+    def parse_term(self):
+        left = self.parse_factor()
+        node = Node("Term", [left])
+        while True:
+            if self.accept("STAR"):
+                right = self.parse_factor()
+                node = Node("Term", [node, Node("*"), right])
+            elif self.accept("SLASH"):
+                right = self.parse_factor()
+                node = Node("Term", [node, Node("/"), right])
+            else:
+                break
+        return node
+    def parse_factor(self):
+        if self.accept("PLUS"):
+            child = self.parse_factor()
+            return Node("Factor", [Node("+"), child])
+        if self.accept("MINUS"):
+            child = self.parse_factor()
+            return Node("Factor", [Node("-"), child])
+        if self.accept("LPAREN"):
+            expr = self.parse_expr()
+            self.expect("RPAREN")
+            return Node("Factor", [Node("("), expr, Node(")")])
+        t = self.accept("NUMBER")
+        if t:
+            return Node("Factor", [Node(t.value)])
+        t = self.accept("IDENT")
+        if t:
+            return Node("Factor", [Node(t.value)])
+        raise SyntaxError(f"Expected Factor, got {self.peek()}")
+
+def print_tree(node, indent=""):
+    print(indent + node.label)
+    for child in node.children:
+        print_tree(child, indent + "    ")
+
+expr = "(3+-3)*4"
+tokens = lex(expr)
+parser = Parser(tokens)
+tree = parser.parse_expr()
+print_tree(tree)
+ OUTPUT:
+Expr
+    Term
+        Term
+            Factor
+                (
+                Expr
+                    Expr
+                        Term
+                            Factor
+                                3
+                    +
+                    Term
+                        Factor
+                            -
+                            Factor
+                                3
+                )
+        *
+        Factor
+            4
+
