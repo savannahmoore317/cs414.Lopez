@@ -1,0 +1,143 @@
+1.<command> ::= <ls_command> 
+            | <cd_command> 
+            | <cat_command> 
+            | <print_command> 
+            | <exec_command>
+            | <set_command>
+            | <echo_command>
+
+<ls_command>    ::= "ls" [ <path> ]
+<cd_command>    ::= "cd" [ <path> ]
+<cat_command>   ::= "cat" <filename_or_var>
+<print_command> ::= "print" <filename_or_var>
+<exec_command>  ::= "exec" <filename_or_var>
+
+<set_command>   ::= "set" <variable> "=" <expr>
+<echo_command>  ::= "echo" <variable>
+
+<filename_or_var> ::= <filename> | <variable>
+
+<filename> ::= <name8> "." <ext3>
+<path>     ::= "/" | <folder> { "/" <folder> }
+<folder>   ::= <name8> | <ext3>
+
+<variable> ::= "$" <ident>
+<ident>    ::= <letter> { <letter> | <digit> }
+
+<expr>     ::= <term> { ("+" | "-") <term> }
+<term>     ::= <factor> { ("*" | "/") <factor> }
+<factor>   ::= <number>
+             | <variable>
+             | "(" <expr> ")"
+
+<number>   ::= <digit> { <digit> }
+<name8>    ::= <letter_or_digit> { <letter_or_digit> }  (* up to 8 chars *)
+<ext3>     ::= <letter_or_digit> { <letter_or_digit> }  (* up to 3 chars *)
+<letter_or_digit> ::= <letter> | <digit>
+<letter>   ::= "A"…"Z" | "a"…"z"
+<digit>    ::= "0"…"9"
+
+
+2.> set $X = 10 + 20
+Set X
+  BinOp(+)
+    Num(10)
+    Num(20)
+Symbol table:
+  X = <expr>
+
+> echo $X
+Echo X
+<expr>
+Symbol table:
+  X = <expr>
+
+> cat $X
+catCommand $X
+Symbol table:
+  X = <expr>
+Output:Set X
+  BinOp(+)
+    Num(10)
+    Num(20)
+Symbol table:
+  X = <expr>
+
+3.a. Global Scope:
++------------------------------+
+| Functions: f, main           |
++------------------------------+
+
+Function: main(int argc, char* argv[])
++------------------------------+
+| Variables: x                 |
+|                              |
+| Calls f(x)                   |
+| Prints x                     |
++------------------------------+
+
+Function: f(int y)
++------------------------------+
+| Parameter: y                |
+| Local variable: x           |
+|                              |
+| For loop: for(int i = 0; ...)|
+| +--------------------------+ |
+| | Loop variable: i         | |
+| | Local variable: temp     | |
+| | Prints i, temp, x        | |
+| +--------------------------+ |
++------------------------------+
+
+b.+--------------------------+
+| Global Scope             |
+|                          |
+| main()                   |
+| +----------------------+ |
+| | Outer Scope          | |
+| |  int a = 5           | |
+| |  int &ref_To_An_A    | |
+| |                      | |
+| |  Inner Block         | |
+| |  +----------------+  | |
+| |  | int a = 10     |  | |
+| |  | std::cout <<   |  | |
+| |  | ref_To_An_A    |  | |
+| |  +----------------+  | |
+| +----------------------+ |
++--------------------------+
+c.+--------------------------+
+| Global Scope             |
+| main()                   |
+| +----------------------+ |
+| | Outer Scope           | |
+| |  int* p -> [42]       | |
+| |                      | |
+| |  Inner Block          | |
+| |  +----------------+  | |
+| |  | int* q = p      |  | |
+| |  | std::cout << *q |  | |
+| |  +----------------+  | |
+| +----------------------+ |
+| delete p                |
++--------------------------+
+d.+--------------------------------+
+| Global Scope                   |
+| main()                         |
+| +----------------------------+ |
+| | Outer Scope (main)         | |
+| |  int* p  ---> [42]         | |
+| |                            | |
+| |  Inner Block               | |
+| |  +----------------------+  | |
+| |  | int* q = p           |  | |
+| |  | std::cout << *q      |  | |
+| |  +----------------------+  | |
+| +----------------------------+ |
+| delete p                     |
++--------------------------------+
+
+
+AI used 
+Lecture used
+Google Used
