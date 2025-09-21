@@ -1,0 +1,448 @@
+1. <command>     = <ls-command> | <cd-command> | <cat-command> | <print-command> | <exec-command> ;
+
+<ls-command>  = "ls" [ <path> ] ;
+<cd-command>  = "cd" [ <path> ] ;
+<cat-command> = "cat" <filename> ;
+<print-command> = "print" <filename> ;
+<exec-command>  = "exec" <filename> ;
+
+<path>        = "/" | <foldername> { "/" <foldername> } ;
+
+<foldername>  = <letter-or-digit> { <letter-or-digit> } ;   (* length ≤ 8 *)
+
+<filename>    = <name8> "." <ext3> ;
+
+<name8>       = <letter-or-digit> { <letter-or-digit> } ;   (* length ≤ 8 *)
+<ext3>        = <letter-or-digit> { <letter-or-digit> } ;   (* length ≤ 3 *)
+
+<letter-or-digit> = <letter> | <digit> ;
+<letter>      = "A" | "B" | … | "Z" | "a" | "b" | … | "z" ;
+<digit>       = "0" | "1" | … | "9" ;
+
+
+2.#include <iostream>
+#include <string>
+#include <vector>
+#include <cctype>
+
+enum class TokenType {
+    LS, CD, CAT, PRINT, EXEC,
+    NAME8, EXT3,
+    DOT, SLASH,
+    END, INVALID
+};
+
+struct Token {
+    TokenType type;
+    std::string value;
+};
+
+class Tokenizer {
+public:
+    explicit Tokenizer(const std::string& input) : input(input), pos(0) {}
+
+    std::vector<Token> tokenize() {
+        std::vector<Token> tokens;
+        while (pos < input.size()) {
+            char ch = input[pos];
+            if (std::isspace(ch)) {
+                ++pos;
+                continue;
+            }
+            if (matchKeyword("ls")) { tokens.push_back({TokenType::LS, "ls"}); continue; }
+            if (matchKeyword("cd")) { tokens.push_back({TokenType::CD, "cd"}); continue; }
+            if (matchKeyword("cat")) { tokens.push_back({TokenType::CAT, "cat"}); continue; }
+            if (matchKeyword("print")) { tokens.push_back({TokenType::PRINT, "print"}); continue; }
+            if (matchKeyword("exec")) { tokens.push_back({TokenType::EXEC, "exec"}); continue; }
+            if (ch == '.') {
+                tokens.push_back({TokenType::DOT, "."});
+                ++pos;
+                continue;
+            }
+            if (ch == '/') {
+                tokens.push_back({TokenType::SLASH, "/"});
+                ++pos;
+                continue;
+            }
+            if (std::isalnum(ch)) {
+                std::string word = readAlnum();
+                if (word.size() <= 3) {
+                    tokens.push_back({TokenType::EXT3, word});
+                } else if (word.size() <= 8) {
+                    tokens.push_back({TokenType::NAME8, word});
+                } else {
+                    tokens.push_back({TokenType::INVALID, word});
+                }
+                continue;
+            }
+            tokens.push_back({TokenType::INVALID, std::string(1, ch)});
+            ++pos;
+        }
+        tokens.push_back({TokenType::END, ""});
+        return tokens;
+    }
+
+private:
+    std::string input;
+    size_t pos;
+
+    bool matchKeyword(const std::string& kw) {
+        if (input.compare(pos, kw.size(), kw) == 0) {
+            char next = (pos + kw.size() < input.size()) ? input[pos + kw.size()] : ' ';
+            if (std::isspace(next) || next == '/' || next == '.' || next == '\0') {
+                pos += kw.size();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    std::string readAlnum() {
+        size_t start = pos;
+        while (pos < input.size() && std::isalnum(input[pos])) {
+            ++pos;
+        }
+        return input.substr(start, pos - start);
+    }
+};
+
+std::string tokenTypeToStr(TokenType t) {
+    switch (t) {
+        case TokenType::LS: return "LS";
+        case TokenType::CD: return "CD";
+        case TokenType::CAT: return "CAT";
+        case TokenType::PRINT: return "PRINT";
+        case TokenType::EXEC: return "EXEC";
+        case TokenType::NAME8: return "NAME8";
+        case TokenType::EXT3: return "EXT3";
+        case TokenType::DOT: return "DOT";
+        case TokenType::SLASH: return "SLASH";
+        case TokenType::END: return "END";
+        case TokenType::INVALID: return "INVALID";
+    }
+    return "UNKNOWN";
+}
+
+int main() {
+    std::string line;
+    std::cout << "Enter command: ";
+    std::getline(std::cin, line);
+    Tokenizer tokenizer(line);
+    auto tokens = tokenizer.tokenize();
+    for (auto& tok : tokens) {
+        std::cout << tokenTypeToStr(tok.type) << "('" << tok.value << "')\n";
+    }
+    return 0;
+}
+Output:CAT('cat')
+NAME8('report')
+DOT('.')
+EXT3('txt')
+END('')
+
+3.#include <iostream>
+#include <string>
+#include <vector>
+#include <cctype>
+#include <memory>
+
+enum class TokenType {
+    LS, CD, CAT, PRINT, EXEC,
+    NAME8, EXT3,
+    DOT, SLASH,
+    END, INVALID
+};
+
+struct Token {
+    TokenType type;
+    std::string value;
+};
+
+class Tokenizer {
+public:
+    explicit Tokenizer(const std::string& input) : input(input), pos(0) {}
+
+    std::vector<Token> tokenize() {
+        std::vector<Token> tokens;
+        while (pos < input.size()) {
+            char ch = input[pos];
+            if (std::isspace(static_cast<unsigned char>(ch))) { ++pos; continue; }
+            if (matchKeyword("ls")) { tokens.push_back({TokenType::LS, "ls"}); continue; }
+            if (matchKeyword("cd")) { tokens.push_back({TokenType::CD, "cd"}); continue; }
+            if (matchKeyword("cat")) { tokens.push_back({TokenType::CAT, "cat"}); continue; }
+            if (matchKeyword("print")) { tokens.push_back({TokenType::PRINT, "print"}); continue; }
+            if (matchKeyword("exec")) { tokens.push_back({TokenType::EXEC, "exec"}); continue; }
+            if (ch == '.') { tokens.push_back({TokenType::DOT, "."}); ++pos; continue; }
+            if (ch == '/') { tokens.push_back({TokenType::SLASH, "/"}); ++pos; continue; }
+            if (std::isalnum(static_cast<unsigned char>(ch))) {
+                std::string word = readAlnum();
+                if (word.size() <= 3) {
+                    tokens.push_back({TokenType::EXT3, word});
+                } else if (word.size() <= 8) {
+                    tokens.push_back({TokenType::NAME8, word});
+                } else {
+                    tokens.push_back({TokenType::INVALID, word});
+                }
+                continue;
+            }
+            tokens.push_back({TokenType::INVALID, std::string(1, ch)});
+            ++pos;
+        }
+        tokens.push_back({TokenType::END, ""});
+        return tokens;
+    }
+
+private:
+    std::string input;
+    size_t pos;
+
+    bool matchKeyword(const std::string& kw) {
+        if (input.compare(pos, kw.size(), kw) == 0) {
+            char next = (pos + kw.size() < input.size()) ? input[pos + kw.size()] : '\0';
+            if (std::isspace(static_cast<unsigned char>(next)) || next == '/' || next == '.' || next == '\0') {
+                pos += kw.size();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    std::string readAlnum() {
+        size_t start = pos;
+        while (pos < input.size() && std::isalnum(static_cast<unsigned char>(input[pos]))) ++pos;
+        return input.substr(start, pos - start);
+    }
+};
+
+struct AST {
+    virtual ~AST() = default;
+    virtual void print(int indent = 0) const = 0;
+};
+
+using ASTPtr = std::unique_ptr<AST>;
+
+struct Path {
+    bool is_root = false;
+    std::vector<std::string> parts;
+};
+
+struct LsAST : AST {
+    bool has_path;
+    Path path;
+    LsAST(bool hp = false): has_path(hp) {}
+    void print(int indent = 0) const override {
+        std::string pad(indent, ' ');
+        std::cout << pad << "LsCommand\n";
+        if (has_path) {
+            std::cout << pad << "  Path: ";
+            if (path.is_root) { std::cout << "/\n"; return; }
+            for (size_t i = 0; i < path.parts.size(); ++i) {
+                if (i) std::cout << "/";
+                std::cout << path.parts[i];
+            }
+            std::cout << "\n";
+        } else {
+            std::cout << pad << "  Path: (current)\n";
+        }
+    }
+};
+
+struct CdAST : AST {
+    Path path;
+    void print(int indent = 0) const override {
+        std::string pad(indent, ' ');
+        std::cout << pad << "CdCommand\n";
+        std::cout << pad << "  Path: ";
+        if (path.is_root) { std::cout << "/\n"; return; }
+        for (size_t i = 0; i < path.parts.size(); ++i) {
+            if (i) std::cout << "/";
+            std::cout << path.parts[i];
+        }
+        std::cout << "\n";
+    }
+};
+
+struct FileAST : AST {
+    std::string cmd;
+    std::string name;
+    std::string ext;
+    FileAST(const std::string& c, const std::string& n, const std::string& e): cmd(c), name(n), ext(e) {}
+    void print(int indent = 0) const override {
+        std::string pad(indent, ' ');
+        std::cout << pad << cmd << "Command\n";
+        std::cout << pad << "  File: " << name << "." << ext << "\n";
+    }
+};
+
+class ParseError : public std::runtime_error {
+public:
+    explicit ParseError(const std::string& msg): std::runtime_error(msg) {}
+};
+
+class Parser {
+public:
+    explicit Parser(const std::vector<Token>& tokens): tokens(tokens), pos(0) {}
+
+    ASTPtr parse_command() {
+        if (match(TokenType::LS)) {
+            advance();
+            if (peek().type == TokenType::END) {
+                auto node = std::make_unique<LsAST>(false);
+                expect(TokenType::END);
+                return node;
+            }
+            bool hasPath = false;
+            Path p;
+            if (peek().type == TokenType::SLASH || peek().type == TokenType::NAME8 || peek().type == TokenType::EXT3) {
+                hasPath = true;
+                p = parse_path();
+            }
+            expect(TokenType::END);
+            auto node = std::make_unique<LsAST>(hasPath);
+            node->path = p;
+            return node;
+        }
+        if (match(TokenType::CD)) {
+            advance();
+            if (peek().type == TokenType::END) {
+                auto node = std::make_unique<CdAST>();
+                node->path.is_root = true;
+                expect(TokenType::END);
+                return node;
+            }
+            Path p = parse_path();
+            expect(TokenType::END);
+            auto node = std::make_unique<CdAST>();
+            node->path = p;
+            return node;
+        }
+        if (match(TokenType::CAT) || match(TokenType::PRINT) || match(TokenType::EXEC)) {
+            TokenType cmdType = peek().type;
+            std::string cmdStr = tokenTypeToStr(cmdType);
+            advance();
+            auto filename = parse_filename();
+            expect(TokenType::END);
+            return std::make_unique<FileAST>(cmdStr, filename.first, filename.second);
+        }
+        throw ParseError("Unknown command or invalid start of command");
+    }
+
+private:
+    const std::vector<Token>& tokens;
+    size_t pos;
+
+    const Token& peek() const { return tokens[pos]; }
+    const Token& current() const { return tokens[pos]; }
+    void advance() { if (pos < tokens.size()) ++pos; }
+
+    bool match(TokenType t) const { return tokens[pos].type == t; }
+
+    void expect(TokenType t) {
+        if (tokens[pos].type != t) {
+            throw ParseError("Syntax error: expected token " + tokenTypeToStr(t) + " but found " + tokenTypeToStr(tokens[pos].type) + "('" + tokens[pos].value + "')");
+        }
+        ++pos;
+    }
+
+    Path parse_path() {
+        Path p;
+        if (match(TokenType::SLASH)) {
+            advance();
+            p.is_root = true;
+            if (match(TokenType::END)) return p;
+        }
+        std::vector<std::string> parts;
+        if (!(match(TokenType::NAME8) || match(TokenType::EXT3))) {
+            if (p.is_root) return p;
+            throw ParseError("Syntax error: expected folder name in path");
+        }
+        parts.push_back(current().value);
+        advance();
+        while (match(TokenType::SLASH)) {
+            advance();
+            if (!(match(TokenType::NAME8) || match(TokenType::EXT3))) throw ParseError("Syntax error: expected folder name after '/'");
+            parts.push_back(current().value);
+            advance();
+        }
+        p.parts = std::move(parts);
+        return p;
+    }
+
+    std::pair<std::string,std::string> parse_filename() {
+        if (!(match(TokenType::NAME8) || match(TokenType::EXT3))) throw ParseError("Syntax error: expected filename base");
+        std::string base = current().value;
+        if (base.size() > 8) throw ParseError("Filename base too long (>8): " + base);
+        advance();
+        expect(TokenType::DOT);
+        if (!match(TokenType::EXT3)) throw ParseError("Syntax error: expected extension (1..3 chars)");
+        std::string ext = current().value;
+        if (ext.size() > 3) throw ParseError("Extension too long (>3): " + ext);
+        advance();
+        return {base, ext};
+    }
+
+    std::string tokenTypeToStr(TokenType t) const {
+        switch (t) {
+            case TokenType::LS: return "ls";
+            case TokenType::CD: return "cd";
+            case TokenType::CAT: return "cat";
+            case TokenType::PRINT: return "print";
+            case TokenType::EXEC: return "exec";
+            case TokenType::NAME8: return "NAME8";
+            case TokenType::EXT3: return "EXT3";
+            case TokenType::DOT: return ".";
+            case TokenType::SLASH: return "/";
+            case TokenType::END: return "END";
+            case TokenType::INVALID: return "INVALID";
+        }
+        return "UNKNOWN";
+    }
+};
+
+std::string tokenTypeToStrGlobal(TokenType t) {
+    switch (t) {
+        case TokenType::LS: return "LS";
+        case TokenType::CD: return "CD";
+        case TokenType::CAT: return "CAT";
+        case TokenType::PRINT: return "PRINT";
+        case TokenType::EXEC: return "EXEC";
+        case TokenType::NAME8: return "NAME8";
+        case TokenType::EXT3: return "EXT3";
+        case TokenType::DOT: return "DOT";
+        case TokenType::SLASH: return "SLASH";
+        case TokenType::END: return "END";
+        case TokenType::INVALID: return "INVALID";
+    }
+    return "UNKNOWN";
+}
+
+int main() {
+    for (;;) {
+        std::string line;
+        std::cout << "> ";
+        if (!std::getline(std::cin, line)) break;
+        if (line.empty()) continue;
+        Tokenizer tokenizer(line);
+        auto tokens = tokenizer.tokenize();
+        try {
+            Parser parser(tokens);
+            auto ast = parser.parse_command();
+            ast->print(0);
+        } catch (const ParseError& e) {
+            std::cout << "Parse error: " << e.what() << "\n";
+            std::cout << "Tokens were:\n";
+            for (const auto& t : tokens) {
+                std::cout << "  " << tokenTypeToStrGlobal(t.type) << "('" << t.value << "')\n";
+            }
+        }
+    }
+    return 0;
+}
+Output:LsCommand
+  Path: (current)
+
+
+
+Ai used
+Google Used
+Youtube used
