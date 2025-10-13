@@ -1,0 +1,121 @@
+1.#include <iostream>
+#include <variant>
+#include <memory>
+#include <functional>
+
+struct Node;
+struct Empty {};
+
+using BinaryTree = std::variant<Empty, std::unique_ptr<Node>>;
+
+struct Node {
+    int value;
+    BinaryTree left;
+    BinaryTree right;
+    Node(int v) : value(v), left(Empty{}), right(Empty{}) {}
+};
+
+template<class... Ts>
+struct Overloaded : Ts... { using Ts::operator()...; };
+template<class... Ts>
+Overloaded(Ts...) -> Overloaded<Ts...>;
+
+void insert(BinaryTree& tree, int val) {
+    std::visit(Overloaded{
+        [&](Empty&) { tree = std::make_unique<Node>(val); },
+        [&](std::unique_ptr<Node>& n) {
+            if (val < n->value) insert(n->left, val);
+            else insert(n->right, val);
+        }
+    }, tree);
+}
+
+void inorder(const BinaryTree& tree) {
+    std::visit(Overloaded{
+        [](const Empty&) {},
+        [](const std::unique_ptr<Node>& n) {
+            inorder(n->left);
+            std::cout << n->value << " ";
+            inorder(n->right);
+        }
+    }, tree);
+}
+
+void preorder(const BinaryTree& tree) {
+    std::visit(Overloaded{
+        [](const Empty&) {},
+        [](const std::unique_ptr<Node>& n) {
+            std::cout << n->value << " ";
+            preorder(n->left);
+            preorder(n->right);
+        }
+    }, tree);
+}
+
+void postorder(const BinaryTree& tree) {
+    std::visit(Overloaded{
+        [](const Empty&) {},
+        [](const std::unique_ptr<Node>& n) {
+            postorder(n->left);
+            postorder(n->right);
+            std::cout << n->value << " ";
+        }
+    }, tree);
+}
+
+int main() {
+    BinaryTree tree = Empty{};
+    insert(tree, 5);
+    insert(tree, 2);
+    insert(tree, 8);
+    insert(tree, 1);
+    insert(tree, 3);
+
+    std::cout << "Inorder: "; inorder(tree); std::cout << "\n";
+    std::cout << "Preorder: "; preorder(tree); std::cout << "\n";
+    std::cout << "Postorder: "; postorder(tree); std::cout << "\n";
+}
+
+
+2.type 'a zipper = { left : 'a list; focus : 'a option; right : 'a list }
+
+let empty () = { left = []; focus = None; right = [] }
+
+let is_empty z =
+  match z.focus, z.left, z.right with
+  | None, [], [] -> true
+  | _ -> false
+
+let move_left z =
+  match z.left, z.focus with
+  | [], _ -> z
+  | h :: t, Some f -> { left = t; focus = Some h; right = f :: z.right }
+  | h :: t, None -> { left = t; focus = Some h; right = z.right }
+
+let move_right z =
+  match z.right, z.focus with
+  | [], _ -> z
+  | h :: t, Some f -> { left = f :: z.left; focus = Some h; right = t }
+  | h :: t, None -> { left = z.left; focus = Some h; right = t }
+
+let push_front x z = { z with left = x :: z.left }
+
+let push_back x z = { z with right = x :: z.right }
+
+let front z =
+  match List.rev z.left with
+  | h :: _ -> Some h
+  | [] -> z.focus
+
+let back z =
+  match z.right with
+  | h :: _ -> Some h
+  | [] -> z.focus
+
+let focus z = z.focus
+
+
+
+AI used
+Google used
+GeekforGeeks used
