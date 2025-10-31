@@ -126,3 +126,25 @@ int main() {
     std::cout << "All checks passed.\n";
 }
 
+
+
+3. #include <optional>
+
+template <class A, class F>
+auto maybe_bind(const std::optional<A>& mx, F f) -> decltype(f(*mx)) {
+    if (!mx) return decltype(f(*mx)){};
+    return f(*mx);
+}
+
+std::optional<int> safe_div(int a, int b) {
+    if (b == 0) return std::nullopt;
+    return a / b;
+}
+
+std::optional<int> safe_div_three(int x, int y, int z) {
+    return maybe_bind(safe_div(x, y), [&](int a) {
+        return safe_div(a, z);
+    });
+}
+
+
