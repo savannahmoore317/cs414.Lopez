@@ -38,3 +38,10 @@ module ListM : MONAD = struct
 end
 module L = Make_infix(ListM)
 
+3.let safe_div (a : int) (b : int) : int option =
+  if b = 0 then None else Some (a / b)
+
+let safe_div_three (x : int) (y : int) (z : int) : int option =
+  let open Option in
+  safe_div x y >>= fun a ->
+  safe_div a z
