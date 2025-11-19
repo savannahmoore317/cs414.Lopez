@@ -6,3 +6,13 @@ Time: 50 microseconds
 1 2 5 5 6 9
 1 2 5 5 6 9
 
+3. In object-oriented programming (OOP), strategy selection works by creating objects that represent different behaviors and then switching which object is used at runtime. 
+In functional programming (FP), like in OCaml, strategies are often just functions that you pass around. Instead of creating objects, you give your program a function to use, and it executes that function.
+
+Functions-as-values and objects-as-behaviors are similar because they both let you change what a program does without changing the main code. 
+The difference is that objects are bundles of data and methods, while functions are just blocks of code that take input and give output.
+
+OCaml’s modules and functors can work like classes. A module can hold a set of related functions, and a functor can take a module as input and create a new module.
+This is similar to how a class can define behavior and then be used to create objects.
+Using modules and functors, you can organize your code, swap different implementations, and keep your program flexible, just like using objects in OOP.
+
